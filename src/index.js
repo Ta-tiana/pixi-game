@@ -18,6 +18,9 @@ let milk;
 let cows;
 let barrels;
 let smokes;
+let finger;
+let interval;
+let activeTool;
 let buttonsContainersArr = [];
 
 /*
@@ -74,6 +77,7 @@ const advertisingStage = new PIXI.Container();
 const crossStage = new PIXI.Container();
 const barrelStage = new PIXI.Container();
 const smokeStage = new PIXI.Container();
+const fingerStage = new PIXI.Container();
 
 // Move stages to the center
 alignCenter(backgroundStage, app.screen);
@@ -82,6 +86,7 @@ alignCenter(milkHouseStage, app.screen);
 alignCenter(cowsStage, app.screen);
 alignCenter(endCardStage, app.screen);
 alignCenter(crossStage, app.screen);
+alignCenter(fingerStage, app.screen);
 
 // Set scale
 setScale(backgroundStage, scale);
@@ -93,6 +98,7 @@ setScale(endCardStage, 0);
 setScale(crossStage, 0);
 setScale(barrelStage, scale);
 setScale(smokeStage, scale);
+setScale(fingerStage, scale);
 
 // Consider z-indexes
 gardenStage.sortableChildren = true;
@@ -101,6 +107,7 @@ app.stage.sortableChildren = true;
 crossStage.sortableChildren = true;
 barrelStage.sortableChildren = true;
 smokeStage.sortableChildren = true;
+fingerStage.sortableChildren = true;
 
 gardenStage.zIndex = 1;
 cowsStage.zIndex = 1;
@@ -108,9 +115,10 @@ endCardStage.zIndex = 12;
 crossStage.zIndex = 14;
 barrelStage.zIndex = 10;
 smokeStage.zIndex = 10;
-
+fingerStage.zIndex = 10;
 barrelStage.alpha = 0;
 smokeStage.alpha = 0;
+fingerStage.alpha = 1;
 
 // Append stages to the app
 app.stage.addChild(backgroundStage);
@@ -120,7 +128,7 @@ app.stage.addChild(milkHouseStage);
 app.stage.addChild(cowsStage);
 app.stage.addChild(advertisingStage);
 app.stage.addChild(crossStage);
-
+app.stage.addChild(fingerStage);
 
 /*
  * Tool handlers
@@ -145,6 +153,7 @@ function checkToolTarget(stage, { x, y }) {
 }
 
 function addTool(containersArray, index, tool) {
+  activeTool = tool;
   containersArray[index].addChild(tool);
 }
 
@@ -426,9 +435,95 @@ function startAnimation(tool) {
   }
 }
 
+function fingerAnimation(tool) {
+  const { id } = tool;
+
+  let coords = {};
+
+  if (id === 0) {
+    coords = { x: -60, y: 290, x1: -110, y1: 50 };
+
+    finger.x = -60;
+    finger.y = 290;
+  }
+
+  if (id === 1) {
+    coords = { x: -55, y: 265, x1: 250, y1: 70 };
+
+    finger.x = 55;
+    finger.y = 265;
+  }
+
+  if (id === 2) {
+    coords = { x: 175, y: 265, x1: 50, y1: -150 };
+
+    finger.x = 175;
+    finger.y = 265;
+  }
+
+  finger.alpha = 1;
+
+  const fingerMoveFrom = new TWEEN.Tween(finger.position)
+    .to({ x: coords.x, y: coords.y }, 1000)
+    .easing(TWEEN.Easing.Linear.None);
+
+  const fingerMoveTo = new TWEEN.Tween(finger.position)
+    .to({ x: coords.x1, y: coords.y1 }, 1000)
+    .repeat(2)
+    .easing(TWEEN.Easing.Linear.None);
+
+  const stopFinger = new TWEEN.Tween(finger)
+    .to({ alpha: 0 }, 500)
+    .easing(TWEEN.Easing.Linear.None);
+
+  fingerMoveTo
+    .chain(fingerMoveFrom)
+    .chain(stopFinger);
+
+  fingerMoveTo.start();
+}
+
 /*
  * Event handlers
  */
+
+function autoHelp() {
+  const delay = 10;
+
+  let time = 0;
+
+  interval = setInterval(() => {
+    time += 1;
+
+    if (time === delay) {
+      fingerAnimation(activeTool);
+      clearInterval(interval);
+    }
+  }, 1000);
+}
+
+// function isUserActive(toolType) {
+//   const tool = toolType;
+//   const delay = 4;
+//
+//   let notActiveTime = 0;
+//
+//   function setActive() {
+//     notActiveTime = 0;
+//   }
+//
+//   const interval = setInterval(() => {
+//     notActiveTime += 1;
+//
+//     document.onmousemove = setActive;
+//
+//     if (notActiveTime >= delay) {
+//       fingerAnimation(tool);
+//       clearInterval(interval);
+//     }
+//     console.log(notActiveTime);
+//   }, 1000);
+// }
 
 function onDragStart(event) {
   this.data = event.data;
@@ -437,6 +532,8 @@ function onDragStart(event) {
   this.parent.zIndex = 8;
 
   toolbarStage.zIndex = 2;
+
+  clearInterval(interval);
 }
 
 function onDragEnd() {
@@ -449,8 +546,8 @@ function onDragEnd() {
     startAnimation(this);
     success.play();
   } else {
-    parent.removeChild(this);
     crossAnimation(this.data.global, this, parent);
+    parent.removeChild(this);
     fail.play();
   }
 
@@ -459,7 +556,8 @@ function onDragEnd() {
   this.data = null;
 
   toolbarStage.zIndex = 0;
-  // cowsStage
+
+  autoHelp();
 }
 
 function onDragMove() {
@@ -552,6 +650,8 @@ function toolbarSetup(textures) {
   hay = PIXI.Sprite.from(assets.tool_2);
   milk = PIXI.Sprite.from(assets.tool_3);
 
+  activeTool = sickle;
+
   sickle.name = 'sickle';
   sickle.anchor.set(0.5);
   sickle.interactive = true;
@@ -586,18 +686,18 @@ function milkHouseSetup(textures) {
   milkHouseStage.addChild(milkHouse);
 }
 
-function cowsSetup(textures, cowstextures) {
+function cowsSetup(textures, cowsTextures) {
   const cowsCoordinates = [
     { x: 100, y: 65 },
     { x: 195, y: -15 },
     { x: 270, y: 60 },
   ];
 
-  const { length } = Object.keys(cowstextures);
+  const { length } = Object.keys(cowsTextures);
   const frames = [];
 
   for (let i = 0; i < length; i += 1) {
-    frames.push(cowstextures[`cow${i}`]);
+    frames.push(cowsTextures[`cow${i}`]);
   }
 
   cowsCoordinates.forEach(({ x, y }, i) => {
@@ -701,10 +801,20 @@ function smokeSetup(smokeTextures) {
   });
 }
 
+function fingerSetup(textures) {
+  finger = PIXI.Sprite.from(textures.finger);
+  finger.name = 'finger';
+  finger.anchor.set(0.5);
+  finger.alpha = 0;
+
+  fingerStage.addChild(finger);
+}
+
 const appBackground = PIXI.Sprite.from('./src/assets/image/game_scene_background.png');
 
 appBackground.anchor.set(0.5, 0.525);
 backgroundStage.addChild(appBackground);
+
 
 app.loader
   .add(
@@ -728,4 +838,8 @@ app.loader
     advertisingSetup(assets);
     barrelSetup(barrels);
     smokeSetup(smokes);
+    fingerSetup(assets);
   });
+
+
+autoHelp();

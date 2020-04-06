@@ -16,6 +16,6 @@
       "no-param-reassign": "off",
       "object-curly-newline": "off",
       "consistent-return": "off",
-      "no-nested-ternary": "off"
+      "no-return-assign": "off"
     }
 }
