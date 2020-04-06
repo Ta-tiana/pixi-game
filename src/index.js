@@ -159,6 +159,7 @@ function addTool(containersArray, index, tool) {
 
 function addActiveButton(containersButton, containerId, childrenId) {
   containersButton[containerId].children[childrenId].texture = active.texture;
+  containersButton[containerId].children[1].alpha = 0;
 }
 
 function addMark(containersButton, id) {
@@ -488,7 +489,7 @@ function fingerAnimation(tool) {
  */
 
 function autoHelp() {
-  const delay = 10;
+  const delay = 4;
 
   let time = 0;
 
@@ -613,13 +614,12 @@ function gardenSetup(textures) {
 
 function toolbarSetup(textures) {
   // Buttons, containers coordinates
+  const toolbarBackground = PIXI.Sprite.from(textures.tools_background);
   const inactiveCoordinates = [
     { x: 152, y: 0 },
     { x: 0, y: 0 },
     { x: -152, y: 0 },
   ];
-
-  const toolbarBackground = PIXI.Sprite.from(textures.tools_background);
 
   toolbarBackground.anchor.set(0.5);
   toolbarStage.x = app.screen.width * 0.5;
@@ -633,14 +633,18 @@ function toolbarSetup(textures) {
   inactiveCoordinates.forEach(({ x, y }) => {
     const buttonContainer = new PIXI.Container();
     const inactive = PIXI.Sprite.from(textures.tool_inactive_base);
+    const questionMark = PIXI.Sprite.from(textures.questionmark);
 
     buttonsContainersArr.push(buttonContainer);
     buttonContainer.zIndex = 0;
+
     inactive.anchor.set(0.5);
+    questionMark.anchor.set(0.5);
 
     setCoordinates(buttonContainer, x, y);
 
     buttonContainer.addChild(inactive);
+    buttonContainer.addChild(questionMark);
     toolbarStage.addChild(buttonContainer);
   });
 
@@ -815,7 +819,6 @@ const appBackground = PIXI.Sprite.from('./src/assets/image/game_scene_background
 appBackground.anchor.set(0.5, 0.525);
 backgroundStage.addChild(appBackground);
 
-
 app.loader
   .add(
     [
@@ -840,6 +843,5 @@ app.loader
     smokeSetup(smokes);
     fingerSetup(assets);
   });
-
 
 autoHelp();
